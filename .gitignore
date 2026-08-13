@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+db.sqlite3
+*.sqlite3
+venv/
+.venv/
+env/
+ENV/
+
+# Node / Frontend
+node_modules/
+/quiz_platform/frontend/build/
+/quiz_platform/frontend/dist/
+.eslintcache
+
+# Environment / Secret variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
