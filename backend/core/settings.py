@@ -13,7 +13,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 # Quick-start development settings - unsuitable for production
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-default-key')
 DEBUG = env.bool('DEBUG', default=True)
-ALLOWED_HOSTS = ['*'] if DEBUG else env.list('ALLOWED_HOSTS', default=[])
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 INSTALLED_APPS = [
@@ -96,4 +96,4 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:3000',
     'http://10.90.187.138:3000',
 ]
-
+
