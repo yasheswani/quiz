@@ -3,9 +3,9 @@ from pathlib import Path
 import environ
 from django.core.exceptions import ImproperlyConfigured
 
-# ---------------------------------------------------------
+# =========================================================
 # BASE CONFIGURATION
-# ---------------------------------------------------------
+# =========================================================
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -14,21 +14,20 @@ env = environ.Env(
     DEBUG=(bool, False)
 )
 
-# Load .env file for local development
+# Load .env for local development only.
+# Vercel will use its Environment Variables.
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 
-# ---------------------------------------------------------
+# =========================================================
 # SECURITY
-# ---------------------------------------------------------
+# =========================================================
 
 SECRET_KEY = env(
     'SECRET_KEY',
     default='django-insecure-development-key'
 )
 
-# IMPORTANT:
-# DEBUG should be False on Vercel/production.
 DEBUG = env.bool('DEBUG', default=False)
 
 ALLOWED_HOSTS = [
@@ -39,11 +38,12 @@ ALLOWED_HOSTS = [
 ]
 
 
-# ---------------------------------------------------------
+# =========================================================
 # APPLICATIONS
-# ---------------------------------------------------------
+# =========================================================
 
 INSTALLED_APPS = [
+    # Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Third-party apps
+    # Third-party
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
@@ -62,9 +62,9 @@ INSTALLED_APPS = [
 ]
 
 
-# ---------------------------------------------------------
+# =========================================================
 # MIDDLEWARE
-# ---------------------------------------------------------
+# =========================================================
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -79,18 +79,18 @@ MIDDLEWARE = [
 ]
 
 
-# ---------------------------------------------------------
+# =========================================================
 # URL / WSGI
-# ---------------------------------------------------------
+# =========================================================
 
 ROOT_URLCONF = 'core.urls'
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
-# ---------------------------------------------------------
+# =========================================================
 # TEMPLATES
-# ---------------------------------------------------------
+# =========================================================
 
 TEMPLATES = [
     {
@@ -109,47 +109,36 @@ TEMPLATES = [
 ]
 
 
-# ---------------------------------------------------------
+# =========================================================
 # DATABASE
-# ---------------------------------------------------------
+# =========================================================
 
 DATABASE_URL = env(
     'DATABASE_URL',
     default=None
 )
 
-if DATABASE_URL:
-    DATABASES = {
-        'default': env.db('DATABASE_URL')
-    }
-
-elif DEBUG:
-    # Local development fallback
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-
-else:
-    # Production must have DATABASE_URL configured
+if not DATABASE_URL:
     raise ImproperlyConfigured(
         'DATABASE_URL is not configured. '
-        'Add DATABASE_URL to the Vercel Environment Variables.'
+        'Please add DATABASE_URL to the Vercel Environment Variables.'
     )
 
+DATABASES = {
+    'default': env.db('DATABASE_URL')
+}
 
-# ---------------------------------------------------------
+
+# =========================================================
 # CUSTOM USER MODEL
-# ---------------------------------------------------------
+# =========================================================
 
 AUTH_USER_MODEL = 'authentication.User'
 
 
-# ---------------------------------------------------------
+# =========================================================
 # DJANGO REST FRAMEWORK
-# ---------------------------------------------------------
+# =========================================================
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -162,9 +151,9 @@ REST_FRAMEWORK = {
 }
 
 
-# ---------------------------------------------------------
+# =========================================================
 # STATIC FILES
-# ---------------------------------------------------------
+# =========================================================
 
 STATIC_URL = '/static/'
 
@@ -173,37 +162,35 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# ---------------------------------------------------------
+# =========================================================
 # CORS
-# ---------------------------------------------------------
+# =========================================================
 
 CORS_ALLOWED_ORIGINS = [
-    # Local frontend
     'http://localhost:3000',
     'http://127.0.0.1:3000',
 
-    # Your deployed frontend
+    # Production frontend
     'https://quiz-chi-ecru.vercel.app',
 ]
 
 
-# ---------------------------------------------------------
+# =========================================================
 # CSRF
-# ---------------------------------------------------------
+# =========================================================
 
 CSRF_TRUSTED_ORIGINS = [
-    # Local frontend
     'http://localhost:3000',
     'http://127.0.0.1:3000',
 
-    # Your deployed frontend
+    # Production frontend
     'https://quiz-chi-ecru.vercel.app',
 ]
 
 
-# ---------------------------------------------------------
-# PROXY / HTTPS
-# ---------------------------------------------------------
+# =========================================================
+# HTTPS / VERCEL
+# =========================================================
 
 SECURE_PROXY_SSL_HEADER = (
     'HTTP_X_FORWARDED_PROTO',
@@ -211,11 +198,14 @@ SECURE_PROXY_SSL_HEADER = (
 )
 
 
-# ---------------------------------------------------------
+# =========================================================
 # PRODUCTION SECURITY
-# ---------------------------------------------------------
+# =========================================================
 
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+    # Vercel already terminates HTTPS.
+    # Therefore we don't force Django to redirect HTTPS.
     SECURE_SSL_REDIRECT = False
