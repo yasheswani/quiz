@@ -1,21 +1,48 @@
 import os
 from pathlib import Path
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
-# Initialize environ properly using Env()
-env = environ.Env(DEBUG=(bool, False))
+# ---------------------------------------------------------
+# BASE CONFIGURATION
+# ---------------------------------------------------------
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Read .env file if it exists
+# Initialize django-environ
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+
+# Load .env file for local development
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-# Quick-start development settings - unsuitable for production
-SECRET_KEY = env('SECRET_KEY', default='django-insecure-default-key')
-DEBUG = env.bool('DEBUG', default=True)
-ALLOWED_HOSTS = ['*']
 
-# Application definition
+# ---------------------------------------------------------
+# SECURITY
+# ---------------------------------------------------------
+
+SECRET_KEY = env(
+    'SECRET_KEY',
+    default='django-insecure-development-key'
+)
+
+# IMPORTANT:
+# DEBUG should be False on Vercel/production.
+DEBUG = env.bool('DEBUG', default=False)
+
+ALLOWED_HOSTS = [
+    'quiz-vufu.vercel.app',
+    '.vercel.app',
+    'localhost',
+    '127.0.0.1',
+]
+
+
+# ---------------------------------------------------------
+# APPLICATIONS
+# ---------------------------------------------------------
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -23,8 +50,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    # Third party apps
+
+    # Third-party apps
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
@@ -34,8 +61,14 @@ INSTALLED_APPS = [
     'quizzes',
 ]
 
+
+# ---------------------------------------------------------
+# MIDDLEWARE
+# ---------------------------------------------------------
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -45,7 +78,19 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
+# ---------------------------------------------------------
+# URL / WSGI
+# ---------------------------------------------------------
+
 ROOT_URLCONF = 'core.urls'
+
+WSGI_APPLICATION = 'core.wsgi.application'
+
+
+# ---------------------------------------------------------
+# TEMPLATES
+# ---------------------------------------------------------
 
 TEMPLATES = [
     {
@@ -63,37 +108,114 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'core.wsgi.application'
 
-# Database configuration pulled securely from .env
-DATABASES = {
-    'default': env.db('DATABASE_URL')
-}
+# ---------------------------------------------------------
+# DATABASE
+# ---------------------------------------------------------
+
+DATABASE_URL = env(
+    'DATABASE_URL',
+    default=None
+)
+
+if DATABASE_URL:
+    DATABASES = {
+        'default': env.db('DATABASE_URL')
+    }
+
+elif DEBUG:
+    # Local development fallback
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+else:
+    # Production must have DATABASE_URL configured
+    raise ImproperlyConfigured(
+        'DATABASE_URL is not configured. '
+        'Add DATABASE_URL to the Vercel Environment Variables.'
+    )
+
+
+# ---------------------------------------------------------
+# CUSTOM USER MODEL
+# ---------------------------------------------------------
 
 AUTH_USER_MODEL = 'authentication.User'
 
-# REST Framework settings
+
+# ---------------------------------------------------------
+# DJANGO REST FRAMEWORK
+# ---------------------------------------------------------
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
-    ]
+    ],
 }
 
-STATIC_URL = 'static/'
+
+# ---------------------------------------------------------
+# STATIC FILES
+# ---------------------------------------------------------
+
+STATIC_URL = '/static/'
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+# ---------------------------------------------------------
+# CORS
+# ---------------------------------------------------------
+
 CORS_ALLOWED_ORIGINS = [
+    # Local frontend
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-    'http://10.90.187.138:3000',
+
+    # Your deployed frontend
+    'https://quiz-chi-ecru.vercel.app',
 ]
+
+
+# ---------------------------------------------------------
+# CSRF
+# ---------------------------------------------------------
 
 CSRF_TRUSTED_ORIGINS = [
+    # Local frontend
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-    'http://10.90.187.138:3000',
+
+    # Your deployed frontend
+    'https://quiz-chi-ecru.vercel.app',
 ]
 
+
+# ---------------------------------------------------------
+# PROXY / HTTPS
+# ---------------------------------------------------------
+
+SECURE_PROXY_SSL_HEADER = (
+    'HTTP_X_FORWARDED_PROTO',
+    'https'
+)
+
+
+# ---------------------------------------------------------
+# PRODUCTION SECURITY
+# ---------------------------------------------------------
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = False
